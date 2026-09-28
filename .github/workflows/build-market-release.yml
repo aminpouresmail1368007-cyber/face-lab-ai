@@ -1,0 +1,62 @@
+name: Build FACE LAB Market Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  ANDROID_HOME: /usr/local/lib/android/sdk
+  ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install Android SDK packages
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"             "platform-tools"             "platforms;android-35"             "build-tools;35.0.0"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.10.2"
+
+      - name: Extract FACE LAB source
+        run: |
+          rm -rf FaceLabAI_ULTRA
+          unzip -q FaceLabAI_ULTRA_4_Source.zip
+          test -f FaceLabAI_ULTRA/settings.gradle
+          test -f FaceLabAI_ULTRA/app/build.gradle
+
+      - name: Build unsigned release APK
+        working-directory: FaceLabAI_ULTRA
+        run: gradle :app:assembleRelease --no-daemon --stacktrace
+
+      - name: Prepare unsigned market APK
+        run: |
+          APK="$(find FaceLabAI_ULTRA/app/build/outputs/apk/release -name '*unsigned*.apk' -o -name 'app-release.apk' | head -n 1)"
+          test -n "$APK"
+          cp "$APK" FACE-LAB-7.3-MARKET-UNSIGNED.apk
+          ls -lh FACE-LAB-7.3-MARKET-UNSIGNED.apk
+
+      - name: Upload unsigned market APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: FACE-LAB-7.3-MARKET-UNSIGNED
+          path: FACE-LAB-7.3-MARKET-UNSIGNED.apk
+          if-no-files-found: error
+          retention-days: 7
