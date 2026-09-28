@@ -1,0 +1,84 @@
+name: Publish FACE LAB Download Page
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publish-face-lab-site.yml"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Create download page
+        shell: bash
+        run: |
+          mkdir -p _site
+          cat > _site/index.html <<'HTML'
+          <!doctype html>
+          <html lang="fa" dir="rtl">
+          <head>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+            <meta name="theme-color" content="#081416" />
+            <title>FACE LAB — دانلود و نصب</title>
+            <style>
+              :root{color-scheme:dark;--bg:#071013;--panel:#0d1d20;--text:#f4fbfb;--muted:#9ab0b4;--cyan:#57e8e4;--cyan2:#8af5ff;--line:rgba(113,238,235,.22)}
+              *{box-sizing:border-box}
+              html,body{margin:0;min-height:100%;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,sans-serif;background:radial-gradient(circle at 50% 14%,#12363a 0,#0a1c20 32%,#050a0c 72%);color:var(--text)}
+              body{display:flex;justify-content:center;align-items:center;padding:24px 18px;min-height:100vh;min-height:100svh}
+              .card{width:min(100%,470px);border:1px solid var(--line);background:linear-gradient(180deg,rgba(13,29,32,.92),rgba(4,11,13,.95));border-radius:30px;padding:32px 22px 24px;box-shadow:0 30px 90px rgba(0,0,0,.45);text-align:center;backdrop-filter:blur(12px)}
+              .logo{width:104px;height:104px;margin:0 auto 20px;border:1.7px solid var(--cyan);border-radius:30px;display:grid;place-items:center;box-shadow:0 0 35px rgba(87,232,228,.12) inset}
+              .face{width:49px;height:64px;border:2px solid var(--cyan);border-radius:46% 46% 52% 52%/38% 38% 60% 60%;position:relative}
+              .face:before{content:"";position:absolute;left:50%;top:13px;width:1px;height:37px;background:var(--cyan);transform:translateX(-50%)}
+              .face:after{content:"";position:absolute;left:10px;right:10px;top:27px;height:15px;border-top:2px solid var(--cyan);border-radius:50%}
+              h1{font-size:31px;letter-spacing:7px;margin:4px 0 8px;direction:ltr}.accent{color:var(--cyan)}
+              .sub{color:var(--muted);font-size:14px;letter-spacing:2.4px;margin-bottom:24px;direction:ltr}
+              .creator{font-size:16px;margin:0 0 8px}.version{font-size:13px;color:var(--muted);margin-bottom:24px}
+              .install{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:62px;border:0;border-radius:18px;text-decoration:none;font-weight:800;font-size:18px;color:#041012;background:linear-gradient(135deg,var(--cyan),var(--cyan2));box-shadow:0 12px 32px rgba(87,232,228,.22);-webkit-tap-highlight-color:transparent}
+              .install:active{transform:scale(.985)}
+              .hint{margin:18px 2px 0;color:#c7d8da;font-size:13px;line-height:1.9;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:13px}
+              .safe{margin-top:16px;color:#7f969a;font-size:12px;line-height:1.75}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--cyan);margin-left:6px;box-shadow:0 0 10px var(--cyan)}
+              footer{margin-top:20px;color:#72888c;font-size:11px}
+            </style>
+          </head>
+          <body>
+            <main class="card">
+              <div class="logo"><div class="face"></div></div>
+              <h1>FACE LAB</h1>
+              <div class="sub">CLINICAL ACADEMY 7</div>
+              <p class="creator">سازنده: <strong>دکتر امین پوراسماعیل</strong></p>
+              <div class="version">نسخه 7.2.1 — Android</div>
+              <a class="install" href="https://github.com/aminpouresmail1368007-cyber/face-lab-ai/releases/download/v7.2.1/FACE-LAB-7.2.1.apk">⬇ نصب FACE LAB</a>
+              <div class="hint">بعد از لمس دکمه، فایل APK دانلود می‌شود. سپس فایل دانلودشده را باز کنید و <b>Install</b> را بزنید.</div>
+              <div class="safe"><span class="dot"></span>اگر اندروید برای اولین نصب اجازه خواست، گزینه <b>Allow from this source</b> را برای مرورگر فعال کنید.</div>
+              <footer>FACE LAB • Android Application</footer>
+            </main>
+          </body>
+          </html>
+          HTML
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
